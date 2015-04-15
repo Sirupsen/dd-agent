@@ -36,7 +36,7 @@ namespace :ci do
 
       sh %(#{supervisor_rootdir}/bin/supervisord\
            -c $VOLATILE_DIR/supervisor/supervisord.conf)
-      sleep_for 3
+      3.times { |i| Wait.for "#{ENV['VOLATILE_DIR']}/supervisor/started_#{i}" }
     end
 
     task :script => ['ci:common:script'] do
@@ -49,7 +49,7 @@ namespace :ci do
 
     task :cleanup => ['ci:common:cleanup'] do
       sh %(kill `cat $VOLATILE_DIR/supervisor/supervisord.pid`)
-      sh %(rm -rf $VOLATILE_DIR/supervisor)
+      # sh %(rm -rf $VOLATILE_DIR/supervisor)
     end
 
     task :execute do

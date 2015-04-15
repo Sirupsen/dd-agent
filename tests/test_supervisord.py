@@ -238,9 +238,9 @@ instances:
         self.assertTrue(check is not None, msg=check)
         self.assertEquals(len(instances), 1)
 
-        # Supervisord should run 3 programs for 30, 60 and 90 seconds
+        # Supervisord should run 3 programs for 10, 20 and 30 seconds
         # respectively. The tests below will ensure that the process count
-        # metric is reported correctly after (roughly) 10, 40, 70 and 100 seconds
+        # metric is reported correctly after (roughly) 1, 11, 21 and 31 seconds
         for i in range(4):
             try:
                 # Run the check

@@ -32,6 +32,8 @@ namespace :ci do
 
     task :before_script => ['ci:common:before_script'] do
       sh %(#{gearman_rootdir}/sbin/gearmand -d -l $VOLATILE_DIR/gearmand.log)
+      # FIXME: wait for gearman start
+      # WaitURL.wait_for_result(??, 5)
     end
 
     task :script => ['ci:common:script'] do
