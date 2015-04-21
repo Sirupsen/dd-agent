@@ -97,7 +97,7 @@ class Collector(object):
         self._agent_metrics = AgentMetrics('agent_metrics',
                                            init_config={},
                                            agentConfig=agentConfig,
-                                           instances={})
+                                           instances=[])
 
         self._metrics_checks = []
 
