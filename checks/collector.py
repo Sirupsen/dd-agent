@@ -1,17 +1,19 @@
 # Core modules
 import os
 import re
-import logging
-import subprocess
 import sys
 import time
-import datetime
+import yaml
 import socket
+import logging
+import os.path
+import datetime
+import subprocess
 
 import modules
 
+from config import get_version, get_system_stats, get_config, get_jmx_status_path
 from util import get_os, get_uuid, md5, Timer, get_hostname, EC2, GCE
-from config import get_version, get_system_stats
 
 import checks.system.unix as u
 import checks.system.win32 as w32
@@ -28,6 +30,7 @@ log = logging.getLogger(__name__)
 
 FLUSH_LOGGING_PERIOD = 10
 FLUSH_LOGGING_INITIAL = 5
+APPTAG = 'app:{0}'
 
 class Collector(object):
     """
@@ -368,7 +371,19 @@ class Collector(object):
             payload['metrics'].extend(self._agent_metrics.check(payload, self.agentConfig,
                 collect_duration, self.emit_duration))
 
+        # If required by the user, let's create the app:xxx host tags
+        if self.agentConfig['create_app_tags']:
+            running_apps = [APPTAG.format(c.name) for c in self.initialized_checks_d]
+            running_apps.extend([APPTAG.format(cname) for cname in self._get_jmx_appnames()])
+            
+            if 'host-tags' not in payload:
+                payload['host-tags'] = dict()
+            if 'system' not in payload['host-tags']:
+                payload['host-tags']['system'] = dict()
+            
+            payload['host-tags']['system'].extend(running_apps)
 
+        # Let's send our payload 
         emitter_statuses = self._emit(payload)
         self.emit_duration = timer.step()
 
@@ -537,4 +552,16 @@ class Collector(object):
 
         return False
 
-
+    def _get_jmx_appnames(self):
+        """ 
+        Retrieves the running JMX checks based on the {tmp}/jmx_status.yaml file 
+        updated by JMXFetch (and the only communication channel between JMXFetch
+        and the collector since JMXFetch).
+        """
+        check_names = []
+        jmx_status_path = os.path.join(get_jmx_status_path(), "jmx_status.yaml")
+        if os.path.exists(jmx_status_path):
+            jmx_checks = yaml.load(file(jmx_status_path)).get('checks', {})
+            for name, instances in jmx_checks.get('initialized_checks', {}).iteritems():
+                check_names.append(name)
+        return check_names
